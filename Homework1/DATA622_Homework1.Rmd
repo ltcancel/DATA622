@@ -1,0 +1,41 @@
+---
+title: "DATA622 Homework1"
+author: "LeTicia Cancel"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Libraries
+```{r}
+
+```
+
+
+Import Data
+```{r}
+
+```
+
+
+Data Structure
+```{r}
+
+```
+
+Data Comparison
+```{r}
+
+```
+
+
+1. Are the columns of your data correlated?
+2. Are there labels in your data? Did that impact your choice of algorithm?
+3. What are the pros and cons of each algorithm you selected?
+4. How your choice of algorithm relates to the datasets (was your choice of algorithm impacted by the datasets you chose)?
+5. Which result will you trust if you need to make a business decision?
+6. Do you think an analysis could be prone to errors when using too much data, or when using the least amount possible?
+7. How does the analysis between data sets compare?
