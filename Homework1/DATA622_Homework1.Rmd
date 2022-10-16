@@ -9,29 +9,38 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Libraries
+## Libraries
 ```{r}
 
 ```
 
 
-Import Data
+## Import Data
+```{r}
+df100 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/1000%20Sales%20Records.csv")
+df1000 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/100000%20Sales%20Records.csv")
+head(df100)
+```
+
+# Pre-work
+1. Review the structure and content of the tables, and think about the data sets (structure, size, dependencies, labels, etc)
+2. Consider the similarities and differences in the two data sets you have downloaded
+3. Think about how to analyze and predict an outcome based on the datasets available
+4. Based on the data you have, think which two machine learning algorithms presented so far could be used to analyze the data
+
+
+## Data Structure
+```{r}
+str(df100)
+str(df1000)
+```
+
+## Data Comparison
 ```{r}
 
 ```
 
-
-Data Structure
-```{r}
-
-```
-
-Data Comparison
-```{r}
-
-```
-
-
+# Homework Questions
 1. Are the columns of your data correlated?
 2. Are there labels in your data? Did that impact your choice of algorithm?
 3. What are the pros and cons of each algorithm you selected?
@@ -39,3 +48,7 @@ Data Comparison
 5. Which result will you trust if you need to make a business decision?
 6. Do you think an analysis could be prone to errors when using too much data, or when using the least amount possible?
 7. How does the analysis between data sets compare?
+
+
+# Essay in word
+Essay (minimum 500 word document) Write a short essay explaining your selection of algorithms and how they relate to the data and what you are trying to do
