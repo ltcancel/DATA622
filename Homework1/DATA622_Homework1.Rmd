@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Libraries
-```{r}
+```{r warning=FALSE}
 library(rcompanion)
 library(datasets)
 library(caTools)
@@ -73,7 +73,7 @@ Both datasets seem relatively simple with mostly categorical data so I will use 
 
 The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? 
 
-The Sales Channel and Order Priority variables are distinct categorical values and can be converted to factors so we will convert both dataframes. Both variables have a smally number of possible values so we will use Order Priority for our Decision Tree.
+The Sales Channel and Order Priority variables are distinct categorical values and can be converted to factors so we will convert both dataframes. Both variables have a small number of possible values so we will use Order Priority for our Decision Tree.
 
 ```{r}
 df100$Sales.Channel <- as.factor(df100$Sales.Channel)
@@ -84,16 +84,62 @@ str(df1000)
 ```
 
 ```{r}
+#sample set
+df100_data <- df100 %>%
+  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
+
 set.seed(1234)
 
-sample_data <- sample.split(df100, SplitRatio = 0.80)
-train_data <- subset(df100, sample_data == TRUE)
-test_data <- subset(df100, sample_data == FALSE)
+#dt <- sort(sample(nrow(df100_data),nrow(df100_data)*.7))
+#train_data <- df100_data[df,]
+
+sample_data <- sample.split(df100_data, SplitRatio = 0.80)
+train_data <- subset(df100_data, sample_data == TRUE)
+test_data <- subset(df100_data, sample_data == FALSE)
+edit(train_data)
 ```
 
+Build tree for first set
 ```{r}
-rtree <- rpart(Order.Priority ~ ., sample_data$train_data)
+rtree <- rpart(Order.Priority ~ ., data = train_data, method="class", control = rpart.control(minsplit = 20, minbucket = 7, maxdepth = 10, usesurrogate = 2, xval = 10))
+rtree
+```
 
+Plot the tree
+```{r}
+plot(rtree)
+text(rtree)
+```
+
+We will build the same decision tree with the second dataset
+
+```{r}
+#sample set
+df1000_data <- df1000 %>%
+  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
+
+set.seed(1234)
+
+#dt <- sort(sample(nrow(df100_data),nrow(df100_data)*.7))
+#train_data <- df100_data[df,]
+
+sample_data2 <- sample.split(df1000_data, SplitRatio = 0.80)
+train_data2 <- subset(df1000_data, sample_data2 == TRUE)
+test_data2 <- subset(df1000_data, sample_data2 == FALSE)
+edit(train_data2)
+```
+
+Build tree for second set
+```{r}
+rtree2 <- rpart(Order.Priority ~ ., data = train_data2, method="class", control = rpart.control(minsplit = 20, minbucket = 7, maxdepth = 10, usesurrogate = 2, xval = 10))
+rtree2
+```
+
+
+Plot the tree for second set
+```{r}
+plot(rtree2)
+text(rtree2)
 ```
 
 
