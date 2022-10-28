@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Libraries
 ```{r}
+library(rcompanion)
+library(datasets)
+library(caTools)
 
 ```
 
@@ -20,25 +23,72 @@ knitr::opts_chunk$set(echo = TRUE)
 df100 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/1000%20Sales%20Records.csv")
 df1000 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/100000%20Sales%20Records.csv")
 head(df100)
+head(df1000)
 ```
 
 # Pre-work
-1. Review the structure and content of the tables, and think about the data sets (structure, size, dependencies, labels, etc)
-2. Consider the similarities and differences in the two data sets you have downloaded
-3. Think about how to analyze and predict an outcome based on the datasets available
-4. Based on the data you have, think which two machine learning algorithms presented so far could be used to analyze the data
 
+1. Review the structure and content of the tables, and think about the data sets (structure, size, dependencies, labels, etc)
 
 ## Data Structure
+
+The first dataframe contains 1000 observations and 14 variables. 7 variables are characters, 2 are integers, and the remaining are numbers. 
+
 ```{r}
 str(df100)
+```
+
+The second dataframe contains 100,000 observations and 14 variables. The variable datatypes are exactly the same as the first dataframe. 
+
+```{r}
 str(df1000)
 ```
 
-## Data Comparison
-```{r}
+2. Consider the similarities and differences in the two data sets you have downloaded
 
+## Data Comparison
+
+Both dataframes look nearly identical, other than the obvious difference in the number of observations. If we look a little closer to the summary of each data set we can find some more differences. The minimum values for the Total.Revenue variable differs. The minimum for the first dataframe is 2043 and the minimum for the second dataframe is 19. Total.Cost and Total.Profit also show a significant difference with a minimum value of 1417 and 532.6 for respectively for the first dataframe and 14 and 4.8 for the second dataframe. Neither dataframe has NA values. The minimum and maximum values do not look off. They all look like valid values based on the variable names. 
+
+```{r}
+#check for NA values
+summary(df100)
 ```
+
+```{r}
+#check for NA values
+summary(df1000)
+```
+
+3. Think about how to analyze and predict an outcome based on the datasets available
+
+Both datasets seem relatively simple with mostly categorical data so I will use Decision Tree and SVM models. 
+
+
+4. Based on the data you have, think which two machine learning algorithms presented so far could be used to analyze the data
+
+## Decision Tree
+
+The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? 
+
+The Sales Channel and Order Priority variables are distinct categorical values and can be converted to factors so we will convert both dataframes. Both variables have a smally number of possible values so we will use Order Priority for our Decision Tree.
+
+```{r}
+df100$Sales.Channel <- as.factor(df100$Sales.Channel)
+df100$Order.Priority <- as.factor(df100$Order.Priority)
+df1000$Sales.Channel <- as.factor(df1000$Sales.Channel)
+df1000$Order.Priority <- as.factor(df1000$Order.Priority)
+str(df1000)
+```
+
+```{r}
+set.seed(1234)
+
+sample_data <- sample.split(df100, SplitRatio = 0.80)
+train_data <- subset(df100, sample_data == TRUE)
+test_data <- subset(df100, sample_data == FALSE)
+```
+
 
 # Homework Questions
 1. Are the columns of your data correlated?
@@ -52,3 +102,5 @@ str(df1000)
 
 # Essay in word
 Essay (minimum 500 word document) Write a short essay explaining your selection of algorithms and how they relate to the data and what you are trying to do
+
+
