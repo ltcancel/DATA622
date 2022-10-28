@@ -14,7 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(rcompanion)
 library(datasets)
 library(caTools)
-
+library(dplyr)
+library(party)
+library(rpart.plot)
 ```
 
 
@@ -87,6 +89,11 @@ set.seed(1234)
 sample_data <- sample.split(df100, SplitRatio = 0.80)
 train_data <- subset(df100, sample_data == TRUE)
 test_data <- subset(df100, sample_data == FALSE)
+```
+
+```{r}
+rtree <- rpart(Order.Priority ~ ., sample_data$train_data)
+
 ```
 
 
