@@ -10,13 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Libraries
-```{r warning=FALSE}
+```{r warning=FALSE, message=FALSE}
 library(rcompanion)
 library(datasets)
 library(caTools)
 library(dplyr)
 library(party)
 library(rpart.plot)
+library(caret)
 ```
 
 
@@ -28,9 +29,6 @@ head(df100)
 head(df1000)
 ```
 
-# Pre-work
-
-1. Review the structure and content of the tables, and think about the data sets (structure, size, dependencies, labels, etc)
 
 ## Data Structure
 
@@ -46,11 +44,11 @@ The second dataframe contains 100,000 observations and 14 variables. The variabl
 str(df1000)
 ```
 
-2. Consider the similarities and differences in the two data sets you have downloaded
-
 ## Data Comparison
 
 Both dataframes look nearly identical, other than the obvious difference in the number of observations. If we look a little closer to the summary of each data set we can find some more differences. The minimum values for the Total.Revenue variable differs. The minimum for the first dataframe is 2043 and the minimum for the second dataframe is 19. Total.Cost and Total.Profit also show a significant difference with a minimum value of 1417 and 532.6 for respectively for the first dataframe and 14 and 4.8 for the second dataframe. Neither dataframe has NA values. The minimum and maximum values do not look off. They all look like valid values based on the variable names. 
+
+From the summaries below we can see that both datasets seem relatively simple with mostly categorical data so I will use Decision Tree and SVM models. 
 
 ```{r}
 #check for NA values
@@ -58,22 +56,14 @@ summary(df100)
 ```
 
 ```{r}
-#check for NA values
 summary(df1000)
 ```
 
-3. Think about how to analyze and predict an outcome based on the datasets available
-
-Both datasets seem relatively simple with mostly categorical data so I will use Decision Tree and SVM models. 
-
-
-4. Based on the data you have, think which two machine learning algorithms presented so far could be used to analyze the data
-
 ## Decision Tree
 
-The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? 
+The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? Since we have two clear distinct categorical variables, Sales Channel and Order Priority, we can use one to be our predictor variable. 
 
-The Sales Channel and Order Priority variables are distinct categorical values and can be converted to factors so we will convert both dataframes. Both variables have a small number of possible values so we will use Order Priority for our Decision Tree.
+We will use a Decision Tree as our modeling technique for both datasets. 
 
 ```{r}
 df100$Sales.Channel <- as.factor(df100$Sales.Channel)
@@ -96,7 +86,7 @@ set.seed(1234)
 sample_data <- sample.split(df100_data, SplitRatio = 0.80)
 train_data <- subset(df100_data, sample_data == TRUE)
 test_data <- subset(df100_data, sample_data == FALSE)
-edit(train_data)
+head(train_data)
 ```
 
 Build tree for first set
@@ -107,8 +97,19 @@ rtree
 
 Plot the tree
 ```{r}
-plot(rtree)
-text(rtree)
+rpart.plot(rtree)
+```
+
+Prediction of first dataset
+```{r}
+pred <- predict(rtree, test_data, type = "class")
+pred_table <- table(test_data$Order.Priority, pred)
+pred_table
+```
+
+Confusion Matrix to test for accuracy
+```{r}
+confusionMatrix(test_data$Order.Priority, pred)
 ```
 
 We will build the same decision tree with the second dataset
@@ -120,40 +121,24 @@ df1000_data <- df1000 %>%
 
 set.seed(1234)
 
-#dt <- sort(sample(nrow(df100_data),nrow(df100_data)*.7))
-#train_data <- df100_data[df,]
 
 sample_data2 <- sample.split(df1000_data, SplitRatio = 0.80)
 train_data2 <- subset(df1000_data, sample_data2 == TRUE)
 test_data2 <- subset(df1000_data, sample_data2 == FALSE)
-edit(train_data2)
+head(train_data2)
 ```
 
 Build tree for second set
 ```{r}
-rtree2 <- rpart(Order.Priority ~ ., data = train_data2, method="class", control = rpart.control(minsplit = 20, minbucket = 7, maxdepth = 10, usesurrogate = 2, xval = 10))
+rtree2 <- rpart(Order.Priority ~ ., data = train_data2, method="class", control = rpart.control(minsplit = 4, minbucket = round(5/3), maxdepth = 3))
 rtree2
 ```
 
-
 Plot the tree for second set
 ```{r}
-plot(rtree2)
-text(rtree2)
+#rpart.plot(rtree2)
 ```
 
 
-# Homework Questions
-1. Are the columns of your data correlated?
-2. Are there labels in your data? Did that impact your choice of algorithm?
-3. What are the pros and cons of each algorithm you selected?
-4. How your choice of algorithm relates to the datasets (was your choice of algorithm impacted by the datasets you chose)?
-5. Which result will you trust if you need to make a business decision?
-6. Do you think an analysis could be prone to errors when using too much data, or when using the least amount possible?
-7. How does the analysis between data sets compare?
-
-
-# Essay in word
-Essay (minimum 500 word document) Write a short essay explaining your selection of algorithms and how they relate to the data and what you are trying to do
 
 
