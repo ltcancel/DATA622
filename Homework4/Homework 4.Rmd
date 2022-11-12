@@ -1,0 +1,24 @@
+---
+title: "Homework 4"
+author: "LeTicia Cancel"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+You get to decide which dataset you want to work on. The data set must be different from the ones used in previous homeworks You can work on a problem from your job, or something you are interested in. You may also obtain a dataset from sites such as Kaggle, Data.Gov, Census Bureau, USGS or other open data portals. 
+Select one of the methodologies studied in weeks 1-10, and one methodology from weeks 11-15 to apply in the new dataset selected. To complete this task:. 
+- describe the problem you are trying to solve.
+- describe your datases and what you did to prepare the data for analysis. 
+- methodologies you used for analyzing the data
+- what's the purpose of the analysis performed
+- make your conclusions from your analysis. Please be sure to address the business impact (it could be of any domain) of your solution.
+Your final presentation could be the traditional R file or Python file and essay, or it could be an oral presentation with the execution and explanation of your code, recorded on any platform of your choice (Youtube, Free Cam). If you select the presentation, it should be a 5 to 8 minutes recording. 
+
+
+
+
