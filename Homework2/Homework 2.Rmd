@@ -12,12 +12,228 @@ knitr::opts_chunk$set(echo = TRUE)
 Based on the latest topics presented, bring a dataset of your choice and create a Decision Tree where you can solve a classification or regression problem and predict the outcome of a particular feature or detail of the data used.
 Switch variables to generate 2 decision trees and compare the results. Create a random forest for regression and analyze the results.
 
-Based on real cases where desicion trees went wrong, and 'the bad & ugly' aspects of decision trees (https://decizone.com/blog/the-good-the-bad-the-ugly-of-using-decision-trees), how can you change this perception when using the decision tree you created to solve a real problem?
+Based on real cases where decision trees went wrong, and 'the bad & ugly' aspects of decision trees (https://decizone.com/blog/the-good-the-bad-the-ugly-of-using-decision-trees), how can you change this perception when using the decision tree you created to solve a real problem?
 
 Format: document with screen captures & analysis.
 
 
 
+## Libraries
+```{r warning=FALSE, message=FALSE}
+library(rcompanion)
+library(datasets)
+library(caTools)
+library(dplyr)
+library(party)
+library(rpart.plot)
+library(caret)
+```
+
+
+## Import Data
+```{r}
+df100 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/1000%20Sales%20Records.csv")
+df1000 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/100000%20Sales%20Records.csv")
+head(df100)
+head(df1000)
+```
+
+
+## Data Structure
+
+The first dataframe contains 1000 observations and 14 variables. 7 variables are characters, 2 are integers, and the remaining are numbers. 
+
+```{r}
+str(df100)
+```
+
+The second dataframe contains 100,000 observations and 14 variables. The variable datatypes are exactly the same as the first dataframe. 
+
+```{r}
+str(df1000)
+```
+
+## Data Comparison
+
+Both dataframes look nearly identical, other than the obvious difference in the number of observations. If we look a little closer to the summary of each data set we can find some more differences. The minimum values for the Total.Revenue variable differs. The minimum for the first dataframe is 2043 and the minimum for the second dataframe is 19. Total.Cost and Total.Profit also show a significant difference with a minimum value of 1417 and 532.6 for respectively for the first dataframe and 14 and 4.8 for the second dataframe. Neither dataframe has NA values. The minimum and maximum values do not look off. They all look like valid values based on the variable names. 
+
+From the summaries below we can see that both datasets seem relatively simple with mostly categorical data so I will use Decision Tree and SVM models. 
+
+```{r}
+#check for NA values
+summary(df100)
+```
+
+```{r}
+summary(df1000)
+```
+
+## Decision Tree
+
+The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? Since we have two clear distinct categorical variables, Sales Channel and Order Priority, we can use one to be our predictor variable. 
+
+We will use a Decision Tree as our modeling technique for both datasets. 
+
+```{r}
+df100$Sales.Channel <- as.factor(df100$Sales.Channel)
+df100$Order.Priority <- as.factor(df100$Order.Priority)
+df1000$Region <- as.factor(df1000$Region)
+df1000$Country <- as.factor(df1000$Country)
+df1000$Item.Type <- as.factor(df1000$Item.Type)
+df1000$Sales.Channel <- as.factor(df1000$Sales.Channel)
+df1000$Order.Priority <- as.factor(df1000$Order.Priority)
+str(df1000)
+```
+
+Correlation table
+```{r}
+head(df1000)
+
+head(cor1)
+str(cor1)
+cor.test(cor1$Sales.Channel, cor1$Units.Sold)
+table(cor1)
+```
+
+Chi-Square Test of all factor variables
+```{r}
+chisq.test(df1000$Region,df1000$Country)
+chisq.test(df1000$Region,df1000$Item.Type)
+chisq.test(df1000$Region,df1000$Sales.Channel)
+chisq.test(df1000$Region,df1000$Order.Priority)
+```
+
+Chi-Square Test using Region
+```{r}
+chisq.test(df1000$Region,df1000$Country)
+chisq.test(df1000$Region,df1000$Item.Type)
+chisq.test(df1000$Region,df1000$Sales.Channel)
+chisq.test(df1000$Region,df1000$Order.Priority)
+chisq.test(df1000$Region,df1000$Units.Sold)
+chisq.test(df1000$Region,df1000$Unit.Price)
+chisq.test(df1000$Region,df1000$Unit.Cost)
+chisq.test(df1000$Region,df1000$Total.Revenue)
+chisq.test(df1000$Region,df1000$Total.Cost)
+chisq.test(df1000$Region,df1000$Total.Profit)
+```
+
+Chi-Square Test using Country
+```{r}
+chisq.test(df1000$Country,df1000$Region)
+chisq.test(df1000$Country,df1000$Item.Type)
+chisq.test(df1000$Country,df1000$Sales.Channel)
+chisq.test(df1000$Country,df1000$Order.Priority)
+chisq.test(df1000$Country,df1000$Units.Sold)
+chisq.test(df1000$Country,df1000$Unit.Price)
+chisq.test(df1000$Country,df1000$Unit.Cost)
+chisq.test(df1000$Country,df1000$Total.Revenue)
+chisq.test(df1000$Country,df1000$Total.Cost)
+chisq.test(df1000$Country,df1000$Total.Profit)
+```
+
+Chi-Square Test using Sales Channel
+
+```{r}
+chisq.test(df1000$Sales.Channel,df1000$Country)
+chisq.test(df1000$Sales.Channel,df1000$Item.Type)
+chisq.test(df1000$Sales.Channel,df1000$Order.Priority)
+chisq.test(df1000$Sales.Channel,df1000$Units.Sold)
+chisq.test(df1000$Sales.Channel,df1000$Unit.Price)
+chisq.test(df1000$Sales.Channel,df1000$Unit.Cost)
+chisq.test(df1000$Sales.Channel,df1000$Total.Revenue)
+chisq.test(df1000$Sales.Channel,df1000$Total.Cost)
+chisq.test(df1000$Sales.Channel,df1000$Total.Profit)
+```
+
+Chi-Square Test using Order Priority
+```{r}
+chisq.test(df1000$Order.Priority,df1000$Sales.Channel)
+chisq.test(df1000$Order.Priority,df1000$Country)
+chisq.test(df1000$Order.Priority,df1000$Item.Type)
+chisq.test(df1000$Order.Priority,df1000$Order.Priority)
+chisq.test(df1000$Order.Priority,df1000$Units.Sold)
+chisq.test(df1000$Order.Priority,df1000$Unit.Price)
+chisq.test(df1000$Order.Priority,df1000$Unit.Cost)
+chisq.test(df1000$Order.Priority,df1000$Total.Revenue)
+chisq.test(df1000$Order.Priority,df1000$Total.Cost)
+chisq.test(df1000$Order.Priority,df1000$Total.Profit)
+```
+
+```{r}
+cor1 <- df1000 %>%
+  select(-c(Region,Country,Item.Type,Sales.Channel,Order.Priority,Ship.Date,Order.Date,Order.ID))
+cor(df1000$Units.Sold, df1000$Unit.Price)
+cor.test(df1000$Units.Sold, df1000$Unit.Cost)
+cor.test(df1000$Unit.Price, df1000$Unit.Price)
+as.dist(round(cor(cor1, method = "spearman"),4))
+```
+
+
+```{r}
+#sample set
+df100_data <- df100 %>%
+  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
+
+set.seed(1234)
+
+#dt <- sort(sample(nrow(df100_data),nrow(df100_data)*.7))
+#train_data <- df100_data[df,]
+
+sample_data <- sample.split(df100_data, SplitRatio = 0.80)
+train_data <- subset(df100_data, sample_data == TRUE)
+test_data <- subset(df100_data, sample_data == FALSE)
+head(train_data)
+```
+
+Build tree for first set
+```{r}
+rtree <- rpart(Order.Priority ~ ., data = train_data, method="class", control = rpart.control(minsplit = 20, minbucket = 7, maxdepth = 10, usesurrogate = 2, xval = 10))
+rtree
+```
+
+Plot the tree
+```{r}
+rpart.plot(rtree)
+```
+
+Prediction of first dataset
+```{r}
+pred <- predict(rtree, test_data, type = "class")
+pred_table <- table(test_data$Order.Priority, pred)
+pred_table
+```
+
+Confusion Matrix to test for accuracy
+```{r}
+confusionMatrix(test_data$Order.Priority, pred)
+```
+
+We will build the same decision tree with the second dataset
+
+```{r}
+#sample set
+df1000_data <- df1000 %>%
+  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
+
+set.seed(1234)
+
+
+sample_data2 <- sample.split(df1000_data, SplitRatio = 0.80)
+train_data2 <- subset(df1000_data, sample_data2 == TRUE)
+test_data2 <- subset(df1000_data, sample_data2 == FALSE)
+head(train_data2)
+```
+
+Build tree for second set
+```{r}
+rtree2 <- rpart(Order.Priority ~ ., data = train_data2, method="class", control = rpart.control(minsplit = 4, minbucket = round(5/3), maxdepth = 3))
+rtree2
+```
+
+Plot the tree for second set
+```{r}
+#rpart.plot(rtree2)
+```
 
 
 
