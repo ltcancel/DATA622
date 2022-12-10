@@ -25,33 +25,119 @@ library(datasets)
 library(caTools)
 library(dplyr)
 library(party)
+library(rpart)
 library(rpart.plot)
 library(caret)
+library(ggcorrplot)
 ```
 
 
 ## Import Data
 ```{r}
-df100 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/1000%20Sales%20Records.csv")
-df1000 <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework1/100000%20Sales%20Records.csv")
-head(df100)
-head(df1000)
+df <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework2/winequality-red.csv", sep = ";", quote = "")
+
+head(df)
+tail(df)
+?read.csv
 ```
 
+The variables in this dataset are:
+
+   1 - fixed acidity
+   2 - volatile acidity
+   3 - citric acid
+   4 - residual sugar
+   5 - chlorides
+   6 - free sulfur dioxide
+   7 - total sulfur dioxide
+   8 - density
+   9 - pH
+   10 - sulphates
+   11 - alcohol
+   Output variable (based on sensory data): 
+   12 - quality (score between 0 and 10)
+   
+Renaming the variables to make them easier to read
+```{r}
+colnames(df) <- c("Fixed Acidity","Volatile Acidity","Citric Acid","Residual Sugar","Chlorides","Free Sulfur Dioxide","Total Sulfur Dioxide","Density","pH","Sulphares","Alcohol","Quality")
+```
 
 ## Data Structure
 
-The first dataframe contains 1000 observations and 14 variables. 7 variables are characters, 2 are integers, and the remaining are numbers. 
+There are 12 variables. 11 of the 12 are numbers and one variable is an int so we do not have to convert any of the variables to factors for this analysis 
 
 ```{r}
-str(df100)
+str(df)
 ```
 
-The second dataframe contains 100,000 observations and 14 variables. The variable datatypes are exactly the same as the first dataframe. 
+There are no NA values in any of the variables. 
 
 ```{r}
-str(df1000)
+summary(df)
 ```
+
+## correlation Table
+
+Are any of the variables correlated?
+
+Residual Sugar and Volatile Acidity have a correlation coefficient of zero so there is zero correlation between these two variables. 
+
+The top negatively correlated variables are:
+- pH and Fixed Acidity -0.68 
+- Volatile Acidity and Citric Acid -0.55  
+- pH and Citric Acid -0.54
+- Alcohol and Density -0.5
+
+The top positively correlated variables are:
+- Three variable pairs are tied for the top positive correclation coefficient of 0.67
+    - Total Sulfur Dioxide and Free Sulfur Dioxide
+    - Citric Acid and Fixed Acidity  
+    - Density and Fixed Acidity
+- Quality and Alcohol 0.48
+
+
+
+```{r fig.width= 13, fig.height=13}
+cor_df <- cor(df)
+
+ggcorrplot(cor_df, hc.order = TRUE, type = "upper", lab = TRUE)
+#ggcorrplot(cor_df, hc.order = TRUE, type = "upper", p.mat = p.mat)
+```
+
+
+Create the train/test sets
+```{r}
+create_train_test <- function(data, size = 0.8, train = TRUE){
+  n_row = nrow(data)
+  total_row = size * n_row
+  train_sample <- 1: total_row
+  if (train == TRUE){
+    return(data[train_sample, ])
+  } else {
+    return(data[-train_sample, ])
+  }
+}
+```
+
+
+Test the function and check the dimension
+```{r}
+data_train <- create_train_test(df, 0.8, train = TRUE)
+data_test <- create_train_test(df, 0.8, train = FALSE)
+dim(data_train)
+dim(data_test)
+```
+
+Using the prop.table() function to verify if the randomization process is correct. We are comparing the Quality score values between the train and test data. The values are similar without too much variance so we can continue. 
+```{r}
+prop.table(table(data_test$Quality))
+prop.table(table(data_train$Quality))
+```
+
+
+
+
+
 
 ## Data Comparison
 
