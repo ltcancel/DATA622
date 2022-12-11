@@ -29,6 +29,7 @@ library(rpart)
 library(rpart.plot)
 library(caret)
 library(ggcorrplot)
+library(randomForest)
 ```
 
 
@@ -104,6 +105,26 @@ ggcorrplot(cor_df, hc.order = TRUE, type = "upper", lab = TRUE)
 #ggcorrplot(cor_df, hc.order = TRUE, type = "upper", p.mat = p.mat)
 ```
 
+The Quality score will be used as the predictor for this analysis. The quality score has a range between 0 and 10 with zero being the lowest score and 10 being the highest score. High = 855/53.47%, low = 744/46.53%, 1,599 total. Over 50% have a score of 6 or above. We will create a new column and group scores 6+ as "High" and all others as "Low". 
+
+Frequency of Quality score
+```{r fig.height=10}
+hist(df$Quality, main = "Wine Quality Score", col="orange", labels = TRUE)
+#?hist
+```
+
+```{r}
+qualityScore <- ifelse(df$Quality>= 6, "high", "low")
+df <- data.frame(df, qualityScore)
+head(df)
+
+#drop old quality column
+df <- df[, -12]
+head(df)
+
+#convert score to factor
+df$qualityScore <- as.factor(df$qualityScore)
+```
 
 Create the train/test sets
 ```{r}
@@ -128,198 +149,68 @@ dim(data_train)
 dim(data_test)
 ```
 
+
+
 Using the prop.table() function to verify if the randomization process is correct. We are comparing the Quality score values between the train and test data. The values are similar without too much variance so we can continue. 
 ```{r}
-prop.table(table(data_test$Quality))
-prop.table(table(data_train$Quality))
+prop.table(table(data_test$qualityScore))
+prop.table(table(data_train$qualityScore))
 ```
 
-
-
-
-
-
-## Data Comparison
-
-Both dataframes look nearly identical, other than the obvious difference in the number of observations. If we look a little closer to the summary of each data set we can find some more differences. The minimum values for the Total.Revenue variable differs. The minimum for the first dataframe is 2043 and the minimum for the second dataframe is 19. Total.Cost and Total.Profit also show a significant difference with a minimum value of 1417 and 532.6 for respectively for the first dataframe and 14 and 4.8 for the second dataframe. Neither dataframe has NA values. The minimum and maximum values do not look off. They all look like valid values based on the variable names. 
-
-From the summaries below we can see that both datasets seem relatively simple with mostly categorical data so I will use Decision Tree and SVM models. 
-
-```{r}
-#check for NA values
-summary(df100)
-```
-
-```{r}
-summary(df1000)
-```
 
 ## Decision Tree
 
-The modeling for this data is very experimental because it is not clear what the business problem or question is. What are we attempting to solve for? Since we have two clear distinct categorical variables, Sales Channel and Order Priority, we can use one to be our predictor variable. 
+The Decision Tree will be build using the Quality variable as the predictor. 
 
-We will use a Decision Tree as our modeling technique for both datasets. 
-
-```{r}
-df100$Sales.Channel <- as.factor(df100$Sales.Channel)
-df100$Order.Priority <- as.factor(df100$Order.Priority)
-df1000$Region <- as.factor(df1000$Region)
-df1000$Country <- as.factor(df1000$Country)
-df1000$Item.Type <- as.factor(df1000$Item.Type)
-df1000$Sales.Channel <- as.factor(df1000$Sales.Channel)
-df1000$Order.Priority <- as.factor(df1000$Order.Priority)
-str(df1000)
+```{r fig.height=15, fig.width=20}
+control <- rpart.control(minsplit = 5L, maxdepth = 5L, minbucket = 5, cp = 0.002, maxsurrogate = 4)
+fit <- rpart(qualityScore~., data = data_train, method = 'class', control = control)
+rpart.plot(fit, extra = "auto")
 ```
 
-Correlation table
-```{r}
-head(df1000)
+## Predictions & Confusion Matrix
 
-head(cor1)
-str(cor1)
-cor.test(cor1$Sales.Channel, cor1$Units.Sold)
-table(cor1)
+```{r}
+predict_df <- predict(fit, data_test[, -13], type = "class")
+
+
+#?predict
+
+confusionMatrix(predict_df, data_test$qualityScore)
 ```
 
-Chi-Square Test of all factor variables
+Error rate is 30%
 ```{r}
-chisq.test(df1000$Region,df1000$Country)
-chisq.test(df1000$Region,df1000$Item.Type)
-chisq.test(df1000$Region,df1000$Sales.Channel)
-chisq.test(df1000$Region,df1000$Order.Priority)
+df_error <- mean(predict_df != data_test$qualityScore)
+df_error
 ```
 
-Chi-Square Test using Region
-```{r}
-chisq.test(df1000$Region,df1000$Country)
-chisq.test(df1000$Region,df1000$Item.Type)
-chisq.test(df1000$Region,df1000$Sales.Channel)
-chisq.test(df1000$Region,df1000$Order.Priority)
-chisq.test(df1000$Region,df1000$Units.Sold)
-chisq.test(df1000$Region,df1000$Unit.Price)
-chisq.test(df1000$Region,df1000$Unit.Cost)
-chisq.test(df1000$Region,df1000$Total.Revenue)
-chisq.test(df1000$Region,df1000$Total.Cost)
-chisq.test(df1000$Region,df1000$Total.Profit)
-```
+## Decisioni Forest
 
-Chi-Square Test using Country
-```{r}
-chisq.test(df1000$Country,df1000$Region)
-chisq.test(df1000$Country,df1000$Item.Type)
-chisq.test(df1000$Country,df1000$Sales.Channel)
-chisq.test(df1000$Country,df1000$Order.Priority)
-chisq.test(df1000$Country,df1000$Units.Sold)
-chisq.test(df1000$Country,df1000$Unit.Price)
-chisq.test(df1000$Country,df1000$Unit.Cost)
-chisq.test(df1000$Country,df1000$Total.Revenue)
-chisq.test(df1000$Country,df1000$Total.Cost)
-chisq.test(df1000$Country,df1000$Total.Profit)
-```
-
-Chi-Square Test using Sales Channel
+Decision Forest 
 
 ```{r}
-chisq.test(df1000$Sales.Channel,df1000$Country)
-chisq.test(df1000$Sales.Channel,df1000$Item.Type)
-chisq.test(df1000$Sales.Channel,df1000$Order.Priority)
-chisq.test(df1000$Sales.Channel,df1000$Units.Sold)
-chisq.test(df1000$Sales.Channel,df1000$Unit.Price)
-chisq.test(df1000$Sales.Channel,df1000$Unit.Cost)
-chisq.test(df1000$Sales.Channel,df1000$Total.Revenue)
-chisq.test(df1000$Sales.Channel,df1000$Total.Cost)
-chisq.test(df1000$Sales.Channel,df1000$Total.Profit)
-```
-
-Chi-Square Test using Order Priority
-```{r}
-chisq.test(df1000$Order.Priority,df1000$Sales.Channel)
-chisq.test(df1000$Order.Priority,df1000$Country)
-chisq.test(df1000$Order.Priority,df1000$Item.Type)
-chisq.test(df1000$Order.Priority,df1000$Order.Priority)
-chisq.test(df1000$Order.Priority,df1000$Units.Sold)
-chisq.test(df1000$Order.Priority,df1000$Unit.Price)
-chisq.test(df1000$Order.Priority,df1000$Unit.Cost)
-chisq.test(df1000$Order.Priority,df1000$Total.Revenue)
-chisq.test(df1000$Order.Priority,df1000$Total.Cost)
-chisq.test(df1000$Order.Priority,df1000$Total.Profit)
+forest_df <- randomForest(data_train$qualityScore~., data = data_train, ntree = 50, do.trace = T, imortance=T)
 ```
 
 ```{r}
-cor1 <- df1000 %>%
-  select(-c(Region,Country,Item.Type,Sales.Channel,Order.Priority,Ship.Date,Order.Date,Order.ID))
-cor(df1000$Units.Sold, df1000$Unit.Price)
-cor.test(df1000$Units.Sold, df1000$Unit.Cost)
-cor.test(df1000$Unit.Price, df1000$Unit.Price)
-as.dist(round(cor(cor1, method = "spearman"),4))
+varImpPlot(forest_df)
 ```
 
-
+Prediction using random forest. There is a slight increase in the accuracy score using a Random Forest. 
 ```{r}
-#sample set
-df100_data <- df100 %>%
-  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
+predict_forest_df <- predict(forest_df, newdata = data_test, type = "class")
 
-set.seed(1234)
-
-#dt <- sort(sample(nrow(df100_data),nrow(df100_data)*.7))
-#train_data <- df100_data[df,]
-
-sample_data <- sample.split(df100_data, SplitRatio = 0.80)
-train_data <- subset(df100_data, sample_data == TRUE)
-test_data <- subset(df100_data, sample_data == FALSE)
-head(train_data)
+confusionMatrix(predict_forest_df, data_test$qualityScore)
 ```
 
-Build tree for first set
-```{r}
-rtree <- rpart(Order.Priority ~ ., data = train_data, method="class", control = rpart.control(minsplit = 20, minbucket = 7, maxdepth = 10, usesurrogate = 2, xval = 10))
-rtree
-```
-
-Plot the tree
-```{r}
-rpart.plot(rtree)
-```
-
-Prediction of first dataset
-```{r}
-pred <- predict(rtree, test_data, type = "class")
-pred_table <- table(test_data$Order.Priority, pred)
-pred_table
-```
-
-Confusion Matrix to test for accuracy
-```{r}
-confusionMatrix(test_data$Order.Priority, pred)
-```
-
-We will build the same decision tree with the second dataset
-
-```{r}
-#sample set
-df1000_data <- df1000 %>%
-  select(Order.Priority, Units.Sold, Unit.Price, Unit.Cost, Total.Revenue, Total.Cost, Total.Profit)
-
-set.seed(1234)
 
 
-sample_data2 <- sample.split(df1000_data, SplitRatio = 0.80)
-train_data2 <- subset(df1000_data, sample_data2 == TRUE)
-test_data2 <- subset(df1000_data, sample_data2 == FALSE)
-head(train_data2)
-```
 
-Build tree for second set
-```{r}
-rtree2 <- rpart(Order.Priority ~ ., data = train_data2, method="class", control = rpart.control(minsplit = 4, minbucket = round(5/3), maxdepth = 3))
-rtree2
-```
 
-Plot the tree for second set
-```{r}
-#rpart.plot(rtree2)
-```
+
+
+
 
 
 
