@@ -9,25 +9,212 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Read the following articles:
-https://www.hindawi.com/journals/complexity/2021/5550344/
-https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8137961/
-Search for academic content (at least 3 articles) that compare the use of decision trees vs SVMs in your current area of expertise.
-Perform an analysis of the dataset used in Homework #2 using the SVM algorithm.
-Compare the results with the results from previous homework.
+Based on the latest topics presented, bring a dataset of your choice and create a Decision Tree where you can solve a classification or regression problem and predict the outcome of a particular feature or detail of the data used.
+Switch variables to generate 2 decision trees and compare the results. Create a random forest for regression and analyze the results.
 
-Answer questions, such as:
-Which algorithm is recommended to get more accurate results?
-Is it better for classification or regression scenarios?
-Do you agree with the recommendations?
-Why?
+Based on real cases where decision trees went wrong, and 'the bad & ugly' aspects of decision trees (https://decizone.com/blog/the-good-the-bad-the-ugly-of-using-decision-trees), how can you change this perception when using the decision tree you created to solve a real problem?
 
-Format
-Essay (minimum 500 word document)
+Format: document with screen captures & analysis.
 
-Write a short essay explaining your selection of algorithms and how they relate to the data and what you are trying to do
-Analysis using R or Python (submit code + errors + analysis as notebook or copy/paste to document)
-Include analysis R (or Python) code.
+
+
+## Libraries
+```{r warning=FALSE, message=FALSE}
+library(rcompanion)
+library(datasets)
+library(caTools)
+library(dplyr)
+library(party)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(ggcorrplot)
+library(randomForest)
+```
+
+
+## Import Data
+```{r}
+df <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework2/winequality-red.csv", sep = ";", quote = "")
+
+head(df)
+tail(df)
+?read.csv
+```
+
+The variables in this dataset are:
+
+   1 - fixed acidity
+   2 - volatile acidity
+   3 - citric acid
+   4 - residual sugar
+   5 - chlorides
+   6 - free sulfur dioxide
+   7 - total sulfur dioxide
+   8 - density
+   9 - pH
+   10 - sulphates
+   11 - alcohol
+   Output variable (based on sensory data): 
+   12 - quality (score between 0 and 10)
+   
+Renaming the variables to make them easier to read
+```{r}
+colnames(df) <- c("Fixed Acidity","Volatile Acidity","Citric Acid","Residual Sugar","Chlorides","Free Sulfur Dioxide","Total Sulfur Dioxide","Density","pH","Sulphares","Alcohol","Quality")
+```
+
+## Data Structure
+
+There are 12 variables. 11 of the 12 are numbers and one variable is an int so we do not have to convert any of the variables to factors for this analysis 
+
+```{r}
+str(df)
+```
+
+There are no NA values in any of the variables. 
+
+```{r}
+summary(df)
+```
+
+## correlation Table
+
+Are any of the variables correlated?
+
+Residual Sugar and Volatile Acidity have a correlation coefficient of zero so there is zero correlation between these two variables. 
+
+The top negatively correlated variables are:
+- pH and Fixed Acidity -0.68 
+- Volatile Acidity and Citric Acid -0.55  
+- pH and Citric Acid -0.54
+- Alcohol and Density -0.5
+
+The top positively correlated variables are:
+- Three variable pairs are tied for the top positive correclation coefficient of 0.67
+    - Total Sulfur Dioxide and Free Sulfur Dioxide
+    - Citric Acid and Fixed Acidity  
+    - Density and Fixed Acidity
+- Quality and Alcohol 0.48
+
+
+
+```{r fig.width= 13, fig.height=13}
+cor_df <- cor(df)
+
+ggcorrplot(cor_df, hc.order = TRUE, type = "upper", lab = TRUE)
+#ggcorrplot(cor_df, hc.order = TRUE, type = "upper", p.mat = p.mat)
+```
+
+The Quality score will be used as the predictor for this analysis. The quality score has a range between 0 and 10 with zero being the lowest score and 10 being the highest score. High = 855/53.47%, low = 744/46.53%, 1,599 total. Over 50% have a score of 6 or above. We will create a new column and group scores 6+ as "High" and all others as "Low". 
+
+Frequency of Quality score
+```{r fig.height=10}
+hist(df$Quality, main = "Wine Quality Score", col="orange", labels = TRUE)
+#?hist
+```
+
+```{r}
+hist(df$qualityScore, main = "Wine Quality Score", col="orange", labels = TRUE)
+```
+
+```{r}
+qualityScore <- ifelse(df$Quality>= 6, "high", "low")
+df <- data.frame(df, qualityScore)
+head(df)
+
+#drop old quality column
+df <- df[, -12]
+head(df)
+
+#convert score to factor
+df$qualityScore <- as.factor(df$qualityScore)
+```
+
+Create the train/test sets
+```{r}
+create_train_test <- function(data, size = 0.8, train = TRUE){
+  n_row = nrow(data)
+  total_row = size * n_row
+  train_sample <- 1: total_row
+  if (train == TRUE){
+    return(data[train_sample, ])
+  } else {
+    return(data[-train_sample, ])
+  }
+}
+```
+
+
+Test the function and check the dimension
+```{r}
+data_train <- create_train_test(df, 0.8, train = TRUE)
+data_test <- create_train_test(df, 0.8, train = FALSE)
+dim(data_train)
+dim(data_test)
+```
+
+
+
+Using the prop.table() function to verify if the randomization process is correct. We are comparing the Quality score values between the train and test data. The values are similar without too much variance so we can continue. 
+```{r}
+prop.table(table(data_test$qualityScore))
+prop.table(table(data_train$qualityScore))
+```
+
+
+## Decision Tree
+
+The Decision Tree will be build using the Quality variable as the predictor. 
+
+```{r fig.height=15, fig.width=20}
+control <- rpart.control(minsplit = 5L, maxdepth = 5L, minbucket = 5, cp = 0.002, maxsurrogate = 4)
+fit <- rpart(qualityScore~., data = data_train, method = 'class', control = control)
+rpart.plot(fit, extra = "auto")
+```
+
+## Predictions & Confusion Matrix
+
+```{r}
+predict_df <- predict(fit, data_test[, -13], type = "class")
+
+
+#?predict
+
+confusionMatrix(predict_df, data_test$qualityScore)
+```
+
+Error rate is 30%
+```{r}
+df_error <- mean(predict_df != data_test$qualityScore)
+df_error
+```
+
+## Decisioni Forest
+
+Decision Forest 
+
+```{r}
+forest_df <- randomForest(data_train$qualityScore~., data = data_train, ntree = 50, do.trace = T, imortance=T)
+```
+
+```{r}
+varImpPlot(forest_df)
+```
+
+Prediction using random forest. There is a slight increase in the accuracy score using a Random Forest. 
+```{r}
+predict_forest_df <- predict(forest_df, newdata = data_test, type = "class")
+
+confusionMatrix(predict_forest_df, data_test$qualityScore)
+```
+
+
+
+
+
+
+
+
 
 
 
