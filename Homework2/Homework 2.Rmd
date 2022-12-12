@@ -114,6 +114,10 @@ hist(df$Quality, main = "Wine Quality Score", col="orange", labels = TRUE)
 ```
 
 ```{r}
+hist(df$qualityScore, main = "Wine Quality Score", col="orange", labels = TRUE)
+```
+
+```{r}
 qualityScore <- ifelse(df$Quality>= 6, "high", "low")
 df <- data.frame(df, qualityScore)
 head(df)
