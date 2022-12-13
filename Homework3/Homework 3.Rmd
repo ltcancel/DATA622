@@ -190,7 +190,7 @@ predict_df <- predict(fit, data_test[, -13], type = "class")
 
 
 #?predict
-
+print("Decision Tree Confusion Matrix")
 confusionMatrix(predict_df, data_test$qualityScore)
 ```
 
@@ -216,6 +216,7 @@ Prediction using random forest. There is a slight increase in the accuracy score
 ```{r}
 predict_forest_df <- predict(forest_df, newdata = data_test, type = "class")
 
+print("Random Forest Confusion Matrix")
 confusionMatrix(predict_forest_df, data_test$qualityScore)
 ```
 
@@ -225,12 +226,19 @@ confusionMatrix(predict_forest_df, data_test$qualityScore)
 ```{r}
 classifier <- svm(formula = qualityScore ~.,
                   data = data_train,
-                  type = 'C-classification',
                   kernal = 'linear')
 
 classifier
 ```
 
+Prediction with SVM
+
+```{r}
+predict_svm <- predict(classifier, newdata = data_test, type = "class")
+
+print("SVM Confusion Matrix")
+confusionMatrix(predict_svm, data_test$qualityScore)
+```
 
 
 
