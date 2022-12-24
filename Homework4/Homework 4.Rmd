@@ -48,7 +48,7 @@ library(e1071)
 bank_df <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Bank_Personal_Loan_Modelling.csv")
 ?read.table
 
-head(bank_df)
+str(bank_df)
 ```
 
 ## Data Exploration
