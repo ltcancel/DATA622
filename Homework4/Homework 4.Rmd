@@ -130,12 +130,7 @@ rpart.plot(fit, extra = "auto")
 
 
 
-Prune the tree
 
-```{r}
-printcp(fit)
-plotcp(fit)
-```
 
 
 Confusion Matrix
@@ -150,7 +145,25 @@ confusionMatrix(predict_df, data_test$Personal.Loan)
 ```
 
 
+Prune the tree
+
+```{r}
+printcp(fit)
+plotcp(fit)
+```
 
 
+```{r}
+#compute accuracy of pruned tree
+base_accuracy <- mean(predict_df == data_test$Personal.Loan)
+```
 
+
+```{r}
+model_pruned <- prune(fit, cp = 0.0041982)
+#accuracy of pruned tree
+predict_df <- predict(model_pruned, data_test, type = "class")
+accuracy_postrun <- mean(predict_df == data_test$Personal.Loan)
+data.frame(base_accuracy, accuracy_postrun)
+```
 
