@@ -29,105 +29,127 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(gridExtra)
+library(rpart)
+library(rpart.plot)
+library(rcompanion)
+library(datasets)
+library(caTools)
+library(party)
+library(caret)
+library(ggcorrplot)
+library(randomForest)
+library(e1071)
 ```
 
 
 ## Data Import
 
 ```{r}
-#Domestic coffee consuption
-df_dom_consumption <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_domestic_consumption.csv")
-#Volume of coffee exported
-df_export <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_export.csv")
-#Total coffee import
-df_import <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_import.csv")
-#Toal coffe production
-df_production <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_production.csv")
+bank_df <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Bank_Personal_Loan_Modelling.csv")
+?read.table
 
-head(df_import)
+head(bank_df)
 ```
 
 ## Data Exploration
 
 Exploring each dataframe
 
+```{r fig.width=20, fig.height=10}
+summary(bank_df)
+```
+
+Convert Bit columns to factor
+
+```{r fig.height=12, fig.width=20}
+bank_df$Education <- as.factor(bank_df$Education)
+bank_df$Personal.Loan <- as.factor(bank_df$Personal.Loan)
+bank_df$Securities.Account <- as.factor(bank_df$Securities.Account)
+bank_df$CD.Account <- as.factor(bank_df$CD.Account)
+bank_df$Online <- as.factor(bank_df$Online)
+bank_df$CreditCard <- as.factor(bank_df$CreditCard)
+```
+
+Column Exploration
+
+Graphs of categorical variables
 ```{r}
-str(df_dom_consumption)
-str(df_export)
-str(df_import)
-str(df_production)
-```
-
-Data viz of each df
-
-Visual of each countries consumption
-```{r fig.height=12, fig.width=20}
-p1 <- df_dom_consumption %>%
-  arrange(desc(Total_domestic_consumption)) %>%
-  top_n(20) %>%
-  ggplot(aes(x = reorder(Country, Total_domestic_consumption), y = Total_domestic_consumption, fill = Country)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  theme(legend.position = "none") +
-  labs(title = "Top 20 Countries Coffee Consumption", x = "Country", y = "Total Consumption")
-
-
-p2 <- df_production %>%
-  arrange(desc(Total_production)) %>%
-  top_n(20) %>%
-  ggplot(aes(x = reorder(Country, Total_production), y = Total_production, fill = Country)) +
-  geom_bar(stat = 'identity') +
-  coord_flip() +
-  theme(legend.position = "none") +
-  labs(title = "Top 20 Countries Coffee Production", x = "Country", y = "Total Coffee Production")
-
-grid.arrange(p1, p2, ncol = 2)
-```
-
-Visual of each countries export
-```{r fig.height=12, fig.width=20}
-p1 <- df_import %>%
-  arrange(desc(Total_import)) %>%
-  top_n(20) %>%
-  ggplot(aes(x = reorder(Country, Total_import), y = Total_import, fill = Country)) +
-  geom_bar(stat = 'identity') +
-  coord_flip() +
-  theme(legend.position = "none") +
-  labs(title = "Top 20 Countries Coffee Import", x = "Country", y = "Total Coffee Import")
-
-
-p2 <- df_export %>%
-  arrange(desc(Total_export)) %>%
-  top_n(20) %>%
-  ggplot(aes(x = reorder(Country, Total_export), y = Total_export, fill = Country)) +
-  geom_bar(stat = 'identity') +
-  coord_flip() +
-  theme(legend.position = "none") +
-  labs(title = "Top 20 Countries Coffee Export", x = "Country", y = "Total Coffee Export")
-
-
-
-grid.arrange(p1, p2, ncol = 2)
+hist(bank_df$Family, main = "Family Size of Customer", col = "orange")
+plot(bank_df$Education, main = "Educational Level of Customer", col = "orange")
+plot(bank_df$Personal.Loan, main = "Customers Accepting Personal Loan Offer", col = "orange")
+plot(bank_df$Securities.Account, main = "Security Account Holder", col = "orange")
+plot(bank_df$CD.Account, main = "CD Account Holder", col = "orange")
+plot(bank_df$Online, main = "Internet Banking", col = "orange")
+plot(bank_df$CreditCard, main = "Owns a Credit Card by UniveralBank", col = "orange")
 
 ```
 
-Visual of each countries import
-```{r fig.height=12, fig.width=12}
-ggplot(df_import, aes(x = reorder(Country, Total_import), y = Total_import, fill = Country)) +
-  geom_bar(stat = 'identity') +
-  coord_flip() +
-  scale_fill_grey() +
-  theme(legend.position = "none")
+Boxplots of continuous variables
+
+```{r}
+boxplot(bank_df$Age, main = "Customer Age")
+boxplot(bank_df$Experience, main = "Customer Years of Professional Experience")
+boxplot(bank_df$Income, main = "Customer Annual Income")
+boxplot(bank_df$CCAvg, main = "Customer Credit Card Average Monthly Spending")
+boxplot(bank_df$Mortgage, main = "Customer Home Mortgage")
+
 ```
 
-Visual of each countries production
-```{r fig.height=12, fig.width=12}
-ggplot(df_production, aes(x = reorder(Country, Total_production), y = Total_production, fill = Country)) +
-  geom_bar(stat = 'identity') +
-  coord_flip() +
-  scale_fill_grey() +
-  theme(legend.position = "none")
+Decision Tree
+
+Create the train/test sets
+```{r}
+set.seed(123)
+create_train_test <- function(data, size = 0.8, train = TRUE){
+  n_row = nrow(data)
+  total_row = size * n_row
+  train_sample <- 1: total_row
+  if (train == TRUE){
+    return(data[train_sample, ])
+  } else {
+    return(data[-train_sample, ])
+  }
+}
 ```
+
+
+Test the function and check the dimension
+```{r}
+data_train <- create_train_test(bank_df, 0.8, train = TRUE)
+data_test <- create_train_test(bank_df, 0.8, train = FALSE)
+dim(data_train)
+dim(data_test)
+```
+
+Decision Tree using Personal Loan as the predictor
+```{r fig.height=15, fig.width=20}
+control <- rpart.control(minsplit = 5L, maxdepth = 5L, minbucket = 5, cp = 0.002, maxsurrogate = 4)
+fit <- rpart(Personal.Loan~., data = data_train, method = 'class', control = control)
+rpart.plot(fit, extra = "auto")
+```
+
+
+
+Prune the tree
+
+```{r}
+printcp(fit)
+plotcp(fit)
+```
+
+
+Confusion Matrix
+
+```{r}
+predict_df <- predict(fit, data_test, type = "class")
+
+
+#?predict
+print("Decision Tree Confusion Matrix")
+confusionMatrix(predict_df, data_test$Personal.Loan)
+```
+
+
 
 
 
