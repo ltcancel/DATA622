@@ -2,13 +2,18 @@
 title: "Homework 4"
 author: "LeTicia Cancel"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Homework #4 Assignment: 
 
 You get to decide which dataset you want to work on. The data set must be different from the ones used in previous homework You can work on a problem from your job, or something you are interested in. You may also obtain a dataset from sites such as Kaggle, Data.Gov, Census Bureau, USGS or other open data portals. 
 
@@ -22,8 +27,11 @@ Select one of the methodologies studied in weeks 1-10, and one methodology from 
 
 Your final presentation could be the traditional R file or Python file and essay, or it could be an oral presentation with the execution and explanation of your code, recorded on any platform of your choice (Youtube, Free Cam). If you select the presentation, it should be a 5 to 8 minutes recording. 
 
+# Introduction
 
-```{r}
+The dataset for this assignment is the Bank Loan Modelling data from Kaggle. The data consists of customer information for a campaign to get customers to open bank loans. The goal is to create a model to identify customers who have a higher probability of opening a loan. The bank collected customer demographic information and the types of accounts the customer has with the bank. 
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
 #libraries
 library(dplyr)
 library(tidyr)
@@ -42,24 +50,23 @@ library(e1071)
 ```
 
 
-## Data Import
+# Data Import
 
 ```{r}
 bank_df <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Bank_Personal_Loan_Modelling.csv")
-?read.table
 
 str(bank_df)
 ```
 
-## Data Exploration
+# Data Exploration
 
-Exploring each dataframe
+If we look at the summary of the dataframe we see that there are no N/A values. Some columns have a minimum value of zero but the zero has a meaning so we do not have to do not have to clean or remove any of the values. 
 
 ```{r fig.width=20, fig.height=10}
 summary(bank_df)
 ```
 
-Convert Bit columns to factor
+The columns are a mix of continuous and categorical so we will convert the categorical columns to factors. 
 
 ```{r fig.height=12, fig.width=20}
 bank_df$Education <- as.factor(bank_df$Education)
@@ -70,9 +77,9 @@ bank_df$Online <- as.factor(bank_df$Online)
 bank_df$CreditCard <- as.factor(bank_df$CreditCard)
 ```
 
-Column Exploration
 
-Graphs of categorical variables
+Graphs of categorical variables. After converting Education, Personal Loan, Securities Account, CD Account, Online, and CreditCard to factors, we can explore the counts for each column. Most of the customers are a household of 1 or 2. The highest education level for most customers is Undergrad (1), then Advanced/Professional (3), and last is Graduate (2). The last four charts are columns that only contain Boolean values, a one or a zero (Yes/No). Most of the customers did not accept the Personal Loan offer, they do not have a Security Account or a CD account, and most do not own a credit card from UniversalBank.
+
 ```{r}
 hist(bank_df$Family, main = "Family Size of Customer", col = "orange")
 plot(bank_df$Education, main = "Educational Level of Customer", col = "orange")
@@ -84,7 +91,7 @@ plot(bank_df$CreditCard, main = "Owns a Credit Card by UniveralBank", col = "ora
 
 ```
 
-Boxplots of continuous variables
+We will use a Boxplot to explore the columns with continuous variables. Customer age and years of professional experience have a normal, symmetrical distribution. The median customer age is in the 40's and the median years of professional experience is 20 years. The last three boxplots contain some outliers with Home Mortgage having the most outliers. 
 
 ```{r}
 boxplot(bank_df$Age, main = "Customer Age")
@@ -95,10 +102,13 @@ boxplot(bank_df$Mortgage, main = "Customer Home Mortgage")
 
 ```
 
-Decision Tree
+# Decision Tree
 
-Create the train/test sets
+The model used for this project is a decision tree. We used an 80/20 split for the train and test dataframes and used the Personal Loan column as the predictor. A zero means the customer did not accept the Personal Loan offer and a one means the customer did accept the personal loan offer. We know from looking at the bar chart from earlier that most customers did not accept the Personal Loan offer. If we follow one of the branches that leads to a 1 (accepted loan offer), customers with an income over $114,00, Education Level above Undergraduate, and income over $117,000 (there are two Income nodes on the right side of the decision tree). A simplified interpretation of that is customers with a higher level of education and a higher income were more likely to accept the Personal Loan offer. 
+
+
 ```{r}
+# Create the train/test sets
 set.seed(123)
 create_train_test <- function(data, size = 0.8, train = TRUE){
   n_row = nrow(data)
@@ -113,27 +123,22 @@ create_train_test <- function(data, size = 0.8, train = TRUE){
 ```
 
 
-Test the function and check the dimension
 ```{r}
+# Test the function and check the dimension
 data_train <- create_train_test(bank_df, 0.8, train = TRUE)
 data_test <- create_train_test(bank_df, 0.8, train = FALSE)
 dim(data_train)
 dim(data_test)
 ```
 
-Decision Tree using Personal Loan as the predictor
 ```{r fig.height=15, fig.width=20}
+# Decision Tree using Personal Loan as the predictor
 control <- rpart.control(minsplit = 5L, maxdepth = 5L, minbucket = 5, cp = 0.002, maxsurrogate = 4)
 fit <- rpart(Personal.Loan~., data = data_train, method = 'class', control = control)
 rpart.plot(fit, extra = "auto")
 ```
 
-
-
-
-
-
-Confusion Matrix
+A Confusion Matrix was used to test the accuracy of the Decision Tree, so we can see that is has a 98.5% accuracy. 
 
 ```{r}
 predict_df <- predict(fit, data_test, type = "class")
@@ -145,7 +150,7 @@ confusionMatrix(predict_df, data_test$Personal.Loan)
 ```
 
 
-Prune the tree
+Although the confusion matrix shows a high accuracy, we will experiment with pruning the tree to see if it makes a difference. A Complexity Parameter (CP) table is used to select the optimal size of the decision tree. CP 5 & 6 have equal and lowest xerror. 
 
 ```{r}
 printcp(fit)
@@ -158,6 +163,7 @@ plotcp(fit)
 base_accuracy <- mean(predict_df == data_test$Personal.Loan)
 ```
 
+Using the cp value for row 5 (0.0041982) we run the tree and prediction one more time. If we compare the accuracy from the original prediction to the postruning, we see that the values are exactly the same. So, pruning the tree did not make a difference. 
 
 ```{r}
 model_pruned <- prune(fit, cp = 0.0041982)
@@ -166,4 +172,8 @@ predict_df <- predict(model_pruned, data_test, type = "class")
 accuracy_postrun <- mean(predict_df == data_test$Personal.Loan)
 data.frame(base_accuracy, accuracy_postrun)
 ```
+
+If I were to do this analysis again, I would filter the data by customers who accepted the loan only. The current decision tree mostly displays information for customers who did not accept the loan which is useful information. If the bank wanted to run this campaign again, they can see the characteristics of the customers who said no. However, I think it would also be useful to have a tree that displays the characteristics of the customers who said yes. 
+
+
 
