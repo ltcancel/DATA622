@@ -10,14 +10,124 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-You get to decide which dataset you want to work on. The data set must be different from the ones used in previous homeworks You can work on a problem from your job, or something you are interested in. You may also obtain a dataset from sites such as Kaggle, Data.Gov, Census Bureau, USGS or other open data portals. 
+You get to decide which dataset you want to work on. The data set must be different from the ones used in previous homework You can work on a problem from your job, or something you are interested in. You may also obtain a dataset from sites such as Kaggle, Data.Gov, Census Bureau, USGS or other open data portals. 
+
 Select one of the methodologies studied in weeks 1-10, and one methodology from weeks 11-15 to apply in the new dataset selected. To complete this task:. 
+
 - describe the problem you are trying to solve.
 - describe your datases and what you did to prepare the data for analysis. 
 - methodologies you used for analyzing the data
 - what's the purpose of the analysis performed
 - make your conclusions from your analysis. Please be sure to address the business impact (it could be of any domain) of your solution.
+
 Your final presentation could be the traditional R file or Python file and essay, or it could be an oral presentation with the execution and explanation of your code, recorded on any platform of your choice (Youtube, Free Cam). If you select the presentation, it should be a 5 to 8 minutes recording. 
+
+
+```{r}
+#libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+
+## Data Import
+
+```{r}
+#Domestic coffee consuption
+df_dom_consumption <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_domestic_consumption.csv")
+#Volume of coffee exported
+df_export <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_export.csv")
+#Total coffee import
+df_import <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_import.csv")
+#Toal coffe production
+df_production <- read.csv("https://raw.githubusercontent.com/ltcancel/DATA622/main/Homework4/Data/Coffee_production.csv")
+
+head(df_import)
+```
+
+## Data Exploration
+
+Exploring each dataframe
+
+```{r}
+str(df_dom_consumption)
+str(df_export)
+str(df_import)
+str(df_production)
+```
+
+Data viz of each df
+
+Visual of each countries consumption
+```{r fig.height=12, fig.width=20}
+p1 <- df_dom_consumption %>%
+  arrange(desc(Total_domestic_consumption)) %>%
+  top_n(20) %>%
+  ggplot(aes(x = reorder(Country, Total_domestic_consumption), y = Total_domestic_consumption, fill = Country)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme(legend.position = "none") +
+  labs(title = "Top 20 Countries Coffee Consumption", x = "Country", y = "Total Consumption")
+
+
+p2 <- df_production %>%
+  arrange(desc(Total_production)) %>%
+  top_n(20) %>%
+  ggplot(aes(x = reorder(Country, Total_production), y = Total_production, fill = Country)) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  theme(legend.position = "none") +
+  labs(title = "Top 20 Countries Coffee Production", x = "Country", y = "Total Coffee Production")
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+Visual of each countries export
+```{r fig.height=12, fig.width=20}
+p1 <- df_import %>%
+  arrange(desc(Total_import)) %>%
+  top_n(20) %>%
+  ggplot(aes(x = reorder(Country, Total_import), y = Total_import, fill = Country)) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  theme(legend.position = "none") +
+  labs(title = "Top 20 Countries Coffee Import", x = "Country", y = "Total Coffee Import")
+
+
+p2 <- df_export %>%
+  arrange(desc(Total_export)) %>%
+  top_n(20) %>%
+  ggplot(aes(x = reorder(Country, Total_export), y = Total_export, fill = Country)) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  theme(legend.position = "none") +
+  labs(title = "Top 20 Countries Coffee Export", x = "Country", y = "Total Coffee Export")
+
+
+
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+Visual of each countries import
+```{r fig.height=12, fig.width=12}
+ggplot(df_import, aes(x = reorder(Country, Total_import), y = Total_import, fill = Country)) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  scale_fill_grey() +
+  theme(legend.position = "none")
+```
+
+Visual of each countries production
+```{r fig.height=12, fig.width=12}
+ggplot(df_production, aes(x = reorder(Country, Total_production), y = Total_production, fill = Country)) +
+  geom_bar(stat = 'identity') +
+  coord_flip() +
+  scale_fill_grey() +
+  theme(legend.position = "none")
+```
 
 
 
